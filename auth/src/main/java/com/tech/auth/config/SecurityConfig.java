@@ -32,15 +32,10 @@ public class SecurityConfig {
                 .requestMatchers("/auth/signup").permitAll()
                 .requestMatchers("/api/public/**").permitAll() // Public API endpoints
                     .anyRequest().authenticated()
-            ).httpBasic(Customizer.withDefaults());
-//            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-//        http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+            );
+        http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+        http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         return http.build();
-    }
-
-    @Bean
-    public UserDetailsService userDetailsService() {
-        return new CustomUserDetailsService();
     }
 
     @Bean

@@ -5,10 +5,13 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@Service
 public class CustomUserDetailsService implements UserDetailsService {
     // user repository or user service can be injected here to fetch user details from a database or other source.
     // Dummy user store for demonstration. Replace with DB/user service in production.
