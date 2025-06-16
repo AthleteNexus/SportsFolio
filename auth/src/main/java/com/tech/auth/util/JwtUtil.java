@@ -2,6 +2,7 @@ package com.tech.auth.util;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -11,9 +12,15 @@ import java.util.function.Function;
 
 @Component
 public class JwtUtil {
-    private final String SECRET_KEY = "your_secret_key_that_is_super_secret_and_long_enough_for_jwt_signing"; // Replace with your actual secret key
-    private final SecretKey key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
-    private final long JWT_TOKEN_VALIDITY = 5 * 60 * 60 * 1000; // 5 hours
+
+    @Value("${jwt.secret}")
+    private String SECRET_KEY;
+    @Value("${jwt.expiration}")
+    private long JWT_TOKEN_VALIDITY;
+
+    private SecretKey getKey() {
+        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+    }
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -30,7 +37,7 @@ public class JwtUtil {
 
     private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(key)
+                .setSigningKey(getKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
@@ -45,7 +52,7 @@ public class JwtUtil {
                 .setSubject(username)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + JWT_TOKEN_VALIDITY))
-                .signWith(key, SignatureAlgorithm.HS256)
+                .signWith(getKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
