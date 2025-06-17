@@ -1,30 +1,27 @@
 package com.tech.auth.dto;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+
+@Getter
+@Setter
+@ToString
+@NoArgsConstructor
 public class AuthRequest {
     private String username;
     private String password;
-
-    public AuthRequest() {
-    }
+    private String emailId;
 
     public AuthRequest(String username, String password) {
         this.username = username;
         this.password = password;
     }
 
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
+    public AuthRequest(String username, String password, String emailId) {
         this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
         this.password = password;
+        this.emailId = emailId;
     }
 }

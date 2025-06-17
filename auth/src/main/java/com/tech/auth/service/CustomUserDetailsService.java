@@ -1,5 +1,8 @@
 package com.tech.auth.service;
 
+import com.tech.dao.UsersDAO;
+import com.tech.entities.Users;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -12,20 +15,18 @@ import java.util.Map;
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
-    // user repository or user service can be injected here to fetch user details from a database or other source.
-    // Dummy user store for demonstration. Replace with DB/user service in production.
-    private static final Map<String, String> USER_STORE = new HashMap<>();
-    static {
-        USER_STORE.put("user", new BCryptPasswordEncoder().encode("password"));
-    }
+    @Autowired
+    private UsersDAO usersDAO;
+    // check for custom user details service implementation and how it integrates with Spring Security
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        if(USER_STORE.containsKey(username))
+        Users user = usersDAO.findByUserName(username);
+        if(user != null) {
             return User.withUsername(username)
-                .password(USER_STORE.get(username))
-                .authorities("ROLE_USER")
-                .build();
-        else
+                    .password(user.getPasswordHash())
+                    .authorities("ROLE_USER")
+                    .build();
+        } else
             throw new UsernameNotFoundException("User not found with username: " + username);
     }
 }

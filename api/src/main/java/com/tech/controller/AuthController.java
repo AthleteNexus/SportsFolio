@@ -2,8 +2,8 @@ package com.tech.controller;
 
 import com.tech.auth.dto.AuthRequest;
 import com.tech.auth.dto.AuthResponse;
-import com.tech.auth.service.AuthService;
 import com.tech.auth.util.JwtUtil;
+import com.tech.service.AuthService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +25,6 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody AuthRequest request) {
-        System.out.println("hello");
         try {
             logger.info("Authenticating user: {}", request.getUsername());
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
@@ -38,17 +37,12 @@ public class AuthController {
         return ResponseEntity.ok(new AuthResponse(token));
     }
 
-//    @PostMapping("/signup")
-//    public ResponseEntity<?> signup(@RequestBody AuthRequest request) {
-//        try {
-//            logger.info("Signing up user: {}", request.getUsername());
-//            authService.signup(request);
-//            logger.info("User signed up successfully: {}", request.getUsername());
-//            return ResponseEntity.ok("User signed up successfully");
-//        } catch (Exception e) {
-//            logger.error("Error signing up user: {}", request.getUsername(), e);
-//            return ResponseEntity.status(500).body("Error signing up user: " + e.getMessage());
-//        }
-//    }
+    @PostMapping("/signup")
+    public ResponseEntity<?> signup(@RequestBody AuthRequest request) {
+        logger.info("Signing up user: {}", request.getUsername());
+        authService.signup(request);
+        logger.info("User signed up successfully: {}", request.getUsername());
+        return ResponseEntity.ok("User signed up successfully");
+    }
 }
 
