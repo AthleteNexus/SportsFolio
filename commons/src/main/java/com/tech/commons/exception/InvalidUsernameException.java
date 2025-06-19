@@ -1,6 +1,6 @@
 package com.tech.commons.exception;
 
-public class InvalidUsernameException extends RuntimeException {
+public class InvalidUsernameException extends ValidationException {
 
     public InvalidUsernameException(String message) {
         super(message);

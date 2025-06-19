@@ -1,6 +1,6 @@
 package com.tech.commons.exception;
 
-public class InvalidPasswordException extends RuntimeException {
+public class InvalidPasswordException extends ValidationException {
     public InvalidPasswordException(String message) {
         super(message);
     }

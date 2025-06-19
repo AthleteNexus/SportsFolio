@@ -1,9 +1,14 @@
 package com.tech.service;
 
 import com.tech.auth.dto.AuthRequest;
+import com.tech.commons.enums.UserRole;
 import com.tech.commons.exception.InvalidEmailIdException;
 import com.tech.commons.exception.InvalidPasswordException;
 import com.tech.commons.exception.InvalidUsernameException;
+import com.tech.commons.exception.UserAlreadyExistsException;
+import com.tech.commons.util.EmailValidator;
+import com.tech.commons.util.PasswordValidator;
+import com.tech.commons.util.UsernameValidator;
 import com.tech.dao.UsersDAO;
 import com.tech.entities.Users;
 import org.apache.catalina.User;
@@ -16,33 +21,46 @@ import org.springframework.stereotype.Service;
 @Service
 public class AuthService {
     private final Logger logger = LoggerFactory.getLogger(AuthService.class);
-    @Autowired
-    private UsersDAO usersDAO;
+
+    private final UsersDAO usersDAO;
+    private final UsernameValidator usernameValidator;
+    private final PasswordValidator passwordValidator;
+    private final EmailValidator emailValidator;
+
+    public AuthService(
+            UsersDAO usersDAO, UsernameValidator usernameValidator, PasswordValidator passwordValidator,
+            EmailValidator emailValidator
+    ) {
+        this.usersDAO = usersDAO;
+        this.usernameValidator = usernameValidator;
+        this.passwordValidator = passwordValidator;
+        this.emailValidator = emailValidator;
+    }
+
 
     public void signup(AuthRequest request) {
         String username = request.getUsername();
         String password = request.getPassword();
         String email = request.getEmailId();
-        if (username == null || username.isEmpty()) {
-            throw new InvalidUsernameException("Username cannot be empty");
-        }
-        if (password == null || password.isEmpty()) {
-            throw new InvalidPasswordException("Password cannot be empty");
-        }
-        if (email == null || email.isEmpty()) {
-            throw new InvalidEmailIdException("EmailId cannot be empty");
-        }
+        logger.info("Signing up user: {}", username);
+        // Check if user already exists
         Boolean usersAlreadyExist = usersDAO.checkIfUserExists(username, email);
         if( usersAlreadyExist ) {
-            throw new InvalidUsernameException("User with this username or email already exists");
+            throw new UserAlreadyExistsException("User with this username or email already exists");
         }
+        // Validate username
+        usernameValidator.validate(username);
+        // Validate password
+        passwordValidator.validate(password);
+        // Validate email
+        emailValidator.validate(email);
 
         // Create a new user entity and save it
         Users user = new Users();
         user.setName(username);
         user.setPasswordHash(new BCryptPasswordEncoder().encode(password));
         user.setEmailId(email);
-        user.setUserRole("ROLE_USER");
+        user.setUserRole("ROLE_"+ UserRole.USER);
         usersDAO.saveUser(user);
     }
 }
