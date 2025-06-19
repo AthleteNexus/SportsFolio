@@ -1,0 +1,20 @@
+logging:
+  level:
+    root: INFO
+
+jwt:
+    secret: ${JWT_SECRET:your_secret_key_that_is_super_secret_and_long_enough_for_jwt_signing}
+    expiration: 18000000 # 5 hours in milliseconds
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5433/sports_folio
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        show_sql: true
