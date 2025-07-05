@@ -55,4 +55,7 @@ public class Users {
     @Column(name = "user_role")
     private String userRole;
 
+    @Column(name = "refresh_token")
+    private String refreshToken;
+
 }

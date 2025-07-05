@@ -15,8 +15,6 @@ public class JwtUtil {
 
     @Value("${jwt.secret}")
     private String SECRET_KEY;
-    @Value("${jwt.expiration}")
-    private long JWT_TOKEN_VALIDITY;
 
     private SecretKey getKey() {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
@@ -47,7 +45,7 @@ public class JwtUtil {
         return extractExpiration(token).before(new Date());
     }
 
-    public String generateToken(String username) {
+    public String generateToken(String username, long JWT_TOKEN_VALIDITY) {
         return Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
@@ -59,6 +57,14 @@ public class JwtUtil {
     public Boolean validateToken(UserDetails userDetails, String username, String token) {
         final String extractedUsername = userDetails.getUsername();
         return (extractedUsername.equals(username) && !isTokenExpired(token));
+    }
+
+    public Boolean validateToken(String token) {
+        return !isTokenExpired(token) &&
+               Jwts.parserBuilder()
+                   .setSigningKey(getKey())
+                   .build()
+                   .isSigned(token);
     }
 }
 
