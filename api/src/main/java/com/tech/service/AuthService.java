@@ -60,7 +60,7 @@ public class AuthService {
         user.setName(username);
         user.setPasswordHash(new BCryptPasswordEncoder().encode(password));
         user.setEmailId(email);
-        user.setUserRole("ROLE_"+ UserRole.USER);
+        user.setUserRole(UserRole.USER.toString());
         usersDAO.saveUser(user);
     }
 }

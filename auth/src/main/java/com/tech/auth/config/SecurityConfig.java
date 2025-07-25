@@ -1,6 +1,7 @@
 package com.tech.auth.config;
 
 import com.tech.auth.filter.JwtRequestFilter;
+import com.tech.commons.enums.UserRole;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,8 +29,10 @@ public class SecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth.requestMatchers("/auth/login").permitAll()
                 .requestMatchers("/auth/signup").permitAll()
+                .requestMatchers("/auth/refresh").permitAll()
                 .requestMatchers("/api/public/**").permitAll() // Public API endpoints
-                    .anyRequest().authenticated()
+                .requestMatchers("api/admin/**").hasRole(UserRole.ADMIN.toString()) // Admin endpoints
+                .anyRequest().authenticated()
             );
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));

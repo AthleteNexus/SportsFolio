@@ -37,7 +37,7 @@ public class UsersDAO {
         return !users.isEmpty();
     }
 
-    public Users findByUserName(String username) {
+    public Optional<Users> findByUserName(String username) {
         return usersRepository.findByName(username);
     }
 }
