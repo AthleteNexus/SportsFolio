@@ -54,16 +54,10 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Object> handleInvalidUsernameException(InvalidUsernameException ex) {
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
-    @ExceptionHandler(InvalidEmailIdException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ResponseEntity<Object> handleInvalidEmailIdException(InvalidEmailIdException ex) {
-        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
-    }
 
-    @ExceptionHandler(ValidationException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ResponseEntity<Object> handleValidationException(ValidationException ex) {
-        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    @ExceptionHandler(ResourceNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ResponseEntity<Object> handleResourceNotFoundException(ResourceNotFoundException ex) {
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 }
-

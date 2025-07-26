@@ -59,7 +59,7 @@ public class AuthService {
         Users user = new Users();
         user.setName(username);
         user.setPasswordHash(new BCryptPasswordEncoder().encode(password));
-        user.setEmailId(email);
+        user.setEmail(email);
         user.setUserRole(UserRole.USER.toString());
         usersDAO.saveUser(user);
     }
