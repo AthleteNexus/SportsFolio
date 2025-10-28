@@ -1,7 +1,8 @@
 package com.tech.dto;
 
 import com.tech.entities.Users;
-import lombok.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 

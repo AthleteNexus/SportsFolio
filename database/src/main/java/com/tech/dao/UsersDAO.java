@@ -32,9 +32,12 @@ public class UsersDAO {
         return usersRepository.findById(id);
     }
 
-    public Boolean checkIfUserExists(String username, String email) {
-        List<Users> users = usersRepository.findByUsernameOrEmail(username, email);
-        return !users.isEmpty();
+    public Boolean checkIfUserExists(String username) {
+        return usersRepository.existsByName(username);
+    }
+
+    public Boolean checkIfEmailExists(String email) {
+        return usersRepository.existsByEmail(email);
     }
 
     public Optional<Users> findByUserName(String username) {

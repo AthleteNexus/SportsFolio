@@ -1,10 +1,12 @@
 package com.tech.controller;
 
-import com.tech.auth.dto.AuthRequest;
-import com.tech.auth.dto.AuthResponse;
-import com.tech.auth.dto.TokenRequest;
+import com.tech.dto.AuthRequest;
+import com.tech.dto.AuthResponse;
+import com.tech.dto.TokenRequest;
 import com.tech.auth.util.JwtUtil;
 import com.tech.commons.constants.Constants;
+import com.tech.commons.exception.UnauthorizedException;
+import com.tech.dto.UserDTO;
 import com.tech.entities.Users;
 import com.tech.service.AuthService;
 import com.tech.service.UserService;
@@ -44,14 +46,15 @@ public class AuthController {
             logger.info("User authenticated successfully: {}", request.getUsername());
         } catch(Exception e) {
             logger.info("Authentication failed for user: {}", request.getUsername() + " - " + e.getMessage());
-            return ResponseEntity.status(401).body("Invalid credentials "+ e.getMessage());
+            throw new UnauthorizedException("Invalid username or password");
         }
         String accessToken = jwtUtil.generateToken(request.getUsername(), Constants.ACCESS_TOKEN_VALIDITY_SECONDS);
         String refreshToken = jwtUtil.generateToken(request.getUsername(), Constants.REFRESH_TOKEN_VALIDITY_SECONDS);
         logger.info("Generated access token and refresh token for user: {}", request.getUsername());
         // Optionally, you can save the tokens in the database or cache for further use
         userService.updateRefreshToken(request.getUsername(), refreshToken);
-        return ResponseEntity.ok(new AuthResponse(accessToken, refreshToken));
+        UserDTO user = userService.getCurrentUser(request.getUsername());
+        return ResponseEntity.ok(new AuthResponse(accessToken, refreshToken, user));
     }
 
     @PostMapping("/signup")
@@ -79,7 +82,7 @@ public class AuthController {
         }
 
         String newAccessToken = jwtUtil.generateToken(user.getName(), Constants.ACCESS_TOKEN_VALIDITY_SECONDS); // 15 mins
-        return ResponseEntity.ok(new AuthResponse(newAccessToken, refreshToken));
+        return ResponseEntity.ok(new AuthResponse(newAccessToken, refreshToken, new UserDTO(user)));
     }
 
     @GetMapping("/logout")

@@ -1,20 +1,15 @@
 package com.tech.service;
 
-import com.tech.auth.dto.AuthRequest;
+import com.tech.dto.AuthRequest;
 import com.tech.commons.enums.UserRole;
-import com.tech.commons.exception.InvalidEmailIdException;
-import com.tech.commons.exception.InvalidPasswordException;
-import com.tech.commons.exception.InvalidUsernameException;
-import com.tech.commons.exception.UserAlreadyExistsException;
+import com.tech.commons.exception.DuplicateResourceException;
 import com.tech.commons.util.EmailValidator;
 import com.tech.commons.util.PasswordValidator;
 import com.tech.commons.util.UsernameValidator;
 import com.tech.dao.UsersDAO;
 import com.tech.entities.Users;
-import org.apache.catalina.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -44,9 +39,12 @@ public class AuthService {
         String email = request.getEmailId();
         logger.info("Signing up user: {}", username);
         // Check if user already exists
-        Boolean usersAlreadyExist = usersDAO.checkIfUserExists(username, email);
-        if( usersAlreadyExist ) {
-            throw new UserAlreadyExistsException("User with this username or email already exists");
+        if( usersDAO.checkIfUserExists(username) ) {
+            throw new DuplicateResourceException("User with this username already exists");
+        }
+        // Check if email already exists
+        if( usersDAO.checkIfEmailExists(email) ) {
+            throw new DuplicateResourceException("User with this email already exists");
         }
         // Validate username
         usernameValidator.validate(username);

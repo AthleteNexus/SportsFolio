@@ -26,7 +26,7 @@ public class BaseDatabaseTest {
     @BeforeEach
     void setupDatabase() throws SQLException {
         // Load schema and initial data
-        loadSQLFile("sql/clearDb.sql"); // clear db
+//        loadSQLFile("sql/clearDb.sql"); // clear db
 
     }
 
