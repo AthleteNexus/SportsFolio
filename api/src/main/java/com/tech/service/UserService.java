@@ -1,36 +1,24 @@
 package com.tech.service;
 
-import com.tech.commons.exception.UserNotFoundException;
-import com.tech.dao.UsersDAO;
+import com.tech.dto.UpdateUserRequest;
+import com.tech.dto.UserDTO;
 import com.tech.entities.Users;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-
+import java.util.List;
 import java.util.Optional;
 
-@Service
-public class UserService {
-    private final Logger logger = LoggerFactory.getLogger(UserService.class);
-    private final UsersDAO usersDAO;
-    public UserService(UsersDAO usersDAO) {
-        this.usersDAO = usersDAO;
-    }
-    public Optional<Users> findByUsername(String username) {
-        return usersDAO.findByUserName(username);
-    }
+public interface UserService {
+    UserDTO getCurrentUser(String username);
+    UserDTO getUserProfile(String username, String currentUsername);
+    UserDTO updateProfile(String username, UpdateUserRequest request);
+    List<UserDTO> getUserFollowers(String username, String currentUsername);
+    List<UserDTO> getUserFollowing(String username, String currentUsername);
+    void followUser(String followerUsername, String followedUsername);
+    void unfollowUser(String followerUsername, String followedUsername);
+    List<UserDTO> searchUsers(String query, int page, int size);
 
-    public void updateRefreshToken(String username, String refreshToken) {
-        logger.info("Updating refresh token for user: {}", username);
-        Optional<Users> userOptional = usersDAO.findByUserName(username);
-        if (userOptional.isPresent()) {
-            Users user = userOptional.get();
-            user.setRefreshToken(refreshToken);
-            usersDAO.saveUser(user);
-            logger.info("Refresh token updated successfully for user: {}", username);
-        } else {
-            logger.warn("User not found for username: {}", username);
-            throw new UserNotFoundException("User not found with username: " + username);
-        }
-    }
+    Users findUserByUsername(String username);
+
+    void updateRefreshToken(String username, String refreshToken);
+
+    Optional<Users> findByUsername(String username);
 }
