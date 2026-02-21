@@ -1,0 +1,518 @@
+@startuml SportsFolioClassDiagram
+
+' ==================== ENUMS ====================
+enum UserRole {
+    USER
+    ADMIN
+    TRAINER
+}
+
+enum Level {
+    BEGINNER
+    INTERMEDIATE
+    ADVANCED
+    PROFESSIONAL
+}
+
+enum GameStage {
+    GROUP_STAGE
+    KNOCKOUT
+    SEMI_FINALS
+    FINALS
+    PLAYOFF
+}
+
+' ==================== CORE ENTITIES ====================
+entity Users {
+    id: Long <<PK>>
+    name: String <<UNIQUE>>
+    email: String <<UNIQUE>>
+    passwordHash: String
+    bio: String
+    profilePicture: String
+    isTrainer: Boolean
+    userRole: String
+    refreshToken: String
+    createdAt: LocalDateTime
+    updatedAt: LocalDateTime
+    --
+    followers: Set<Users>
+    following: Set<Users>
+    userSports: List<UserSports>
+}
+
+entity UserSports {
+    id: Long <<PK>>
+    user_id: Long <<FK>>
+    sport_id: Long <<FK>>
+    level: Level
+}
+
+entity Sports {
+    id: Long <<PK>>
+    name: String
+    description: String
+    createdAt: LocalDateTime
+}
+
+entity Trainer {
+    id: Long <<PK>>
+    user_id: Long <<FK>>
+    specialization: String
+    bio: String
+    createdAt: LocalDateTime
+}
+
+' ==================== POST & SOCIAL ENTITIES ====================
+entity Post {
+    id: Long <<PK>>
+    user_id: Long <<FK>>
+    content: String
+    createdAt: LocalDateTime
+    updatedAt: LocalDateTime
+    --
+    comments: List<Comment>
+    likes: List<PostLike>
+}
+
+entity Comment {
+    id: Long <<PK>>
+    post_id: Long <<FK>>
+    user_id: Long <<FK>>
+    content: String
+    createdAt: LocalDateTime
+}
+
+entity PostLike {
+    id: Long <<PK>>
+    post_id: Long <<FK>>
+    user_id: Long <<FK>>
+    createdAt: LocalDateTime
+}
+
+entity Like {
+    id: Long <<PK>>
+    user_id: Long <<FK>>
+    target_id: Long
+    target_type: String
+    createdAt: LocalDateTime
+}
+
+' ==================== TOURNAMENT ENTITIES ====================
+entity Tournament {
+    id: Long <<PK>>
+    name: String
+    type: String
+    organizer_id: Long <<FK>>
+    sports_id: Long <<FK>>
+    startDate: LocalDate
+    endDate: LocalDate
+    createdAt: LocalDateTime
+}
+
+entity TournamentParticipant {
+    id: Long <<PK>>
+    tournament_id: Long <<FK>>
+    user_id: Long <<FK>>
+    createdAt: LocalDateTime
+}
+
+entity Fixtures {
+    id: Long <<PK>>
+    tournament_id: Long <<FK>>
+    team1_id: Long <<FK>>
+    team2_id: Long <<FK>>
+    matchDate: LocalDateTime
+    gameStage: GameStage
+    createdAt: LocalDateTime
+}
+
+' ==================== ENDORSEMENT & RECOGNITION ====================
+entity Endorsement {
+    id: Long <<PK>>
+    endorser_id: Long <<FK>>
+    endorsed_id: Long <<FK>>
+    badge: String
+    message: String
+    createdAt: LocalDateTime
+}
+
+entity HallOfFame {
+    id: Long <<PK>>
+    user_id: Long <<FK>>
+    achievement: String
+    createdAt: LocalDateTime
+}
+
+' ==================== DTOs ====================
+class AuthRequest {
+    username: String
+    password: String
+    emailId: String
+}
+
+class AuthResponse {
+    accessToken: String
+    refreshToken: String
+    user: UserDTO
+}
+
+class UserDTO {
+    id: Long
+    name: String
+    email: String
+    bio: String
+    profilePicture: String
+    userRole: String
+    createdAt: LocalDateTime
+}
+
+class PostDTO {
+    id: Long
+    content: String
+    author: UserDTO
+    comments: List<CommentDTO>
+    likes: Integer
+    createdAt: LocalDateTime
+}
+
+class CommentDTO {
+    id: Long
+    content: String
+    author: UserDTO
+    createdAt: LocalDateTime
+}
+
+class TokenRequest {
+    refreshToken: String
+}
+
+class UpdateUserRequest {
+    name: String
+    bio: String
+    profilePicture: String
+}
+
+' ==================== SERVICE LAYER ====================
+class AuthService {
+    +signup(AuthRequest): void
+    -validateUsername(String): void
+    -validatePassword(String): void
+    -validateEmail(String): void
+}
+
+class UserService {
+    +getCurrentUser(String): UserDTO
+    +findByUsername(String): Optional<Users>
+    +updateRefreshToken(String, String): void
+    +updateUser(Long, UpdateUserRequest): UserDTO
+    +followUser(Long, Long): void
+    +unfollowUser(Long, Long): void
+}
+
+class PostService {
+    +createPost(String, String): PostDTO
+    +getPost(Long): PostDTO
+    +getUserPosts(String): List<PostDTO>
+    +getNewsFeed(): List<PostDTO>
+    +deletePost(Long): void
+}
+
+class CommentService {
+    +createComment(Long, String, String): CommentDTO
+    +getComments(Long): List<CommentDTO>
+    +deleteComment(Long): void
+}
+
+class LikeService {
+    +likePost(Long, Long): void
+    +unlikePost(Long, Long): void
+    +getLikesCount(Long): Integer
+}
+
+class TournamentService {
+    +createTournament(Tournament): void
+    +getTournament(Long): Tournament
+    +joinTournament(Long, Long): void
+    +getAllTournaments(): List<Tournament>
+}
+
+class TrainerService {
+    +getTrainer(Long): Trainer
+    +getAllTrainers(): List<Trainer>
+    +createTrainerProfile(Long, Trainer): void
+}
+
+' ==================== REPOSITORY/DAO LAYER ====================
+interface UserRepository {
+    findByName(String): Optional<Users>
+    findByEmail(String): Optional<Users>
+    existsByName(String): boolean
+    existsByEmail(String): boolean
+}
+
+interface PostRepository {
+    findByAuthorId(Long): List<Post>
+    findById(Long): Optional<Post>
+}
+
+interface CommentRepository {
+    findByPostId(Long): List<Comment>
+}
+
+interface PostLikeRepository {
+    findByPostId(Long): List<PostLike>
+}
+
+interface TournamentRepository {
+    findAll(): List<Tournament>
+    findById(Long): Optional<Tournament>
+}
+
+interface SportsRepository {
+    findAll(): List<Sports>
+}
+
+interface EndorsementRepository {
+    findByEndorsedId(Long): List<Endorsement>
+}
+
+class UsersDAO {
+    +checkIfUserExists(String): boolean
+    +checkIfEmailExists(String): boolean
+    +saveUser(Users): void
+}
+
+class TournamentParticipantDAO {
+    +addParticipant(TournamentParticipant): void
+    +getParticipants(Long): List<TournamentParticipant>
+}
+
+class EndorsementDAO {
+    +saveEndorsement(Endorsement): void
+    +getEndorsementsReceived(Long): List<Endorsement>
+}
+
+class HallOfFameDAO {
+    +addToHallOfFame(HallOfFame): void
+    +getHallOfFame(): List<HallOfFame>
+}
+
+class TrainerDAO {
+    +saveTrainer(Trainer): void
+    +getTrainer(Long): Optional<Trainer>
+}
+
+' ==================== SECURITY & UTILITIES ====================
+class JwtUtil {
+    -SECRET_KEY: String
+    +generateToken(String, long): String
+    +extractUsername(String): String
+    +extractExpiration(String): Date
+    +extractClaim(String, Function): Object
+    +validateToken(String): Boolean
+    +validateToken(UserDetails, String, String): Boolean
+    -isTokenExpired(String): Boolean
+    -extractAllClaims(String): Claims
+}
+
+class CustomUserDetailsService {
+    +loadUserByUsername(String): UserDetails
+}
+
+class SecurityConfig {
+    +filterChain(HttpSecurity): SecurityFilterChain
+    +authenticationManager(): AuthenticationManager
+    +passwordEncoder(): PasswordEncoder
+}
+
+class JwtAuthenticationFilter {
+    +doFilterInternal(ServletRequest, ServletResponse, FilterChain): void
+    -extractTokenFromRequest(): String
+}
+
+class GlobalExceptionHandler {
+    +handleDuplicateResourceException(): ResponseEntity<Object>
+    +handleUnauthorizedException(): ResponseEntity<Object>
+    +handleBadRequest(): ResponseEntity<Object>
+    +handleResourceNotFoundException(): ResponseEntity<Object>
+    -buildResponse(HttpStatus, String): ResponseEntity<Object>
+}
+
+class EmailValidator {
+    +validate(String): void
+}
+
+class PasswordValidator {
+    +validate(String): void
+}
+
+class UsernameValidator {
+    +validate(String): void
+}
+
+class Constants {
+    ACCESS_TOKEN_VALIDITY_SECONDS: long
+    REFRESH_TOKEN_VALIDITY_SECONDS: long
+}
+
+' ==================== CONTROLLER LAYER ====================
+class AuthController {
+    +login(AuthRequest): ResponseEntity<?>
+    +signup(AuthRequest): ResponseEntity<?>
+    +refreshToken(TokenRequest): ResponseEntity<?>
+    +logout(): ResponseEntity<?>
+}
+
+class UsersController {
+    +getUserProfile(Long): ResponseEntity<UserDTO>
+    +updateUserProfile(Long, UpdateUserRequest): ResponseEntity<UserDTO>
+    +followUser(Long): ResponseEntity<?>
+    +unfollowUser(Long): ResponseEntity<?>
+}
+
+class PostController {
+    +createPost(String, UserDetails): ResponseEntity<PostDTO>
+    +getNewsFeed(): ResponseEntity<List<PostDTO>>
+    +getPost(Long): ResponseEntity<PostDTO>
+    +getUserPosts(String): ResponseEntity<List<PostDTO>>
+    +deletePost(Long): ResponseEntity<?>
+}
+
+class CommentController {
+    +createComment(CommentDTO, UserDetails): ResponseEntity<CommentDTO>
+    +getComments(Long): ResponseEntity<List<CommentDTO>>
+    +deleteComment(Long): ResponseEntity<?>
+}
+
+class LikeController {
+    +likePost(Long, UserDetails): ResponseEntity<?>
+    +unlikePost(Long): ResponseEntity<?>
+    +getLikes(Long): ResponseEntity<Integer>
+}
+
+class TournamentController {
+    +createTournament(Tournament): ResponseEntity<Tournament>
+    +getTournament(Long): ResponseEntity<Tournament>
+    +getAllTournaments(): ResponseEntity<List<Tournament>>
+    +joinTournament(Long): ResponseEntity<?>
+}
+
+class TrainerController {
+    +getTrainer(Long): ResponseEntity<Trainer>
+    +getAllTrainers(): ResponseEntity<List<Trainer>>
+}
+
+class SportsController {
+    +getAllSports(): ResponseEntity<List<Sports>>
+    +addSportToUser(UserSports): ResponseEntity<?>
+}
+
+class AdminController {
+    +getAllUsers(): ResponseEntity<List<UserDTO>>
+    +deleteUser(Long): ResponseEntity<?>
+    +getUserStats(): ResponseEntity<Map>
+}
+
+' ==================== RELATIONSHIPS ====================
+
+' Users Relationships
+Users "1" o-- "*" UserSports : "has"
+Users "1" o-- "*" Post : "creates"
+Users "1" o-- "*" Comment : "writes"
+Users "1" o-- "*" PostLike : "likes"
+Users "1" o-- "*" Tournament : "organizes"
+Users "1" o-- "*" TournamentParticipant : "participates in"
+Users "*" -- "*" Users : "follows/followers" <<many-to-many>>
+Users "1" o-- "*" Endorsement : "endorses"
+Users "1" o-- "*" Endorsement : "receives"
+Users "1" o-- "*" Trainer : "has trainer profile"
+Users "1" o-- "*" HallOfFame : "achieves"
+
+' Sports Relationships
+Sports "1" o-- "*" UserSports : "has"
+Sports "1" o-- "*" Tournament : "hosts"
+
+' Post Relationships
+Post "1" o-- "*" Comment : "has"
+Post "1" o-- "*" PostLike : "has"
+
+' Tournament Relationships
+Tournament "1" o-- "*" TournamentParticipant : "has"
+Tournament "1" o-- "*" Fixtures : "contains"
+
+' Service Dependencies
+AuthService --> UserRepository
+AuthService --> UsersDAO
+AuthService --> EmailValidator
+AuthService --> PasswordValidator
+AuthService --> UsernameValidator
+
+UserService --> UserRepository
+UserService --> JwtUtil
+
+PostService --> PostRepository
+PostService --> CommentRepository
+PostService --> PostLikeRepository
+
+CommentService --> CommentRepository
+CommentService --> PostRepository
+
+LikeService --> PostLikeRepository
+LikeService --> PostRepository
+
+TournamentService --> TournamentRepository
+TournamentService --> TournamentParticipantDAO
+
+TrainerService --> TrainerDAO
+
+' Controller Dependencies
+AuthController --> AuthService
+AuthController --> UserService
+AuthController --> JwtUtil
+
+UsersController --> UserService
+PostController --> PostService
+CommentController --> CommentService
+LikeController --> LikeService
+TournamentController --> TournamentService
+TrainerController --> TrainerService
+SportsController --> SportsRepository
+AdminController --> UserService
+
+' Security Dependencies
+JwtAuthenticationFilter --> JwtUtil
+JwtAuthenticationFilter --> CustomUserDetailsService
+SecurityConfig --> JwtAuthenticationFilter
+SecurityConfig --> CustomUserDetailsService
+CustomUserDetailsService --> UserRepository
+
+' Exception Handling
+GlobalExceptionHandler --> Constants
+
+' ==================== NOTES ====================
+note right of JwtUtil
+    Stateless JWT-based authentication
+    Token lifetime: 5 hours (access)
+    Refresh tokens for renewal
+end note
+
+note right of GlobalExceptionHandler
+    Centralized error handling
+    Returns consistent error responses
+    HTTP status code mapping
+end note
+
+note right of UserSports
+    Junction table for many-to-many
+    between Users and Sports
+    Includes user's skill level
+end note
+
+note right of Endorsement
+    Users can endorse other athletes
+    Includes custom badge and message
+    Tracks endorsement date
+end note
+
+@enduml
