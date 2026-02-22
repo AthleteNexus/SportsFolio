@@ -1,10 +1,8 @@
 package com.tech.service;
 
-import com.tech.commons.exception.ConflictException;
+import com.tech.commons.exception.*;
 import com.tech.dto.AuthRequest;
 import com.tech.commons.enums.UserRole;
-import com.tech.commons.exception.DuplicateResourceException;
-import com.tech.commons.exception.UnauthorizedException;
 import com.tech.commons.util.EmailValidator;
 import com.tech.commons.util.OTPGenerator;
 import com.tech.commons.util.PasswordValidator;
@@ -180,6 +178,85 @@ public class AuthService {
 
         // Generate and send new OTP
         generateAndSendOTP(email);
+    }
+
+    /**
+     * Sends OTP for password reset to user's email
+     * @param email User's email address
+     */
+    public void forgotPassword(String email) {
+        logger.info("Password reset OTP requested for email: {}", email);
+
+        // Check if user exists
+        Optional<Users> userOptional = usersDAO.findByUserEmail(email);
+        if (userOptional.isEmpty()) {
+            throw new UserNotFoundException("User not found with this email");
+        }
+
+        // Validate email
+        emailValidator.validate(email);
+
+        // Delete any existing unverified OTP for this email
+        Optional<OTP> existingOTP = otpDAO.findLatestUnverifiedOTPByEmail(email);
+        existingOTP.ifPresent(otpDAO::deleteOTP);
+
+        // Generate and send OTP for password reset
+        generateAndSendOTP(email);
+        logger.info("Password reset OTP sent to email: {}", email);
+    }
+
+    /**
+     * Resets user password using OTP verification
+     * @param email User's email address
+     * @param otp OTP code provided by user
+     * @param newPassword New password
+     * @param confirmPassword Password confirmation
+     */
+    public void resetPasswordWithOTP(String email, String otp, String newPassword, String confirmPassword) {
+        logger.info("Attempting password reset with OTP for email: {}", email);
+
+        // Validate passwords match
+        if (!newPassword.equals(confirmPassword)) {
+            throw new ConflictException("Passwords do not match");
+        }
+
+        // Validate new password strength
+        passwordValidator.validate(newPassword);
+
+        // Check if user exists
+        Optional<Users> userOptional = usersDAO.findByUserEmail(email);
+        if (userOptional.isEmpty()) {
+            throw new UserNotFoundException("User not found with this email");
+        }
+
+        // Find the OTP record
+        Optional<OTP> otpOptional = otpDAO.findByEmailAndOTPCode(email, otp);
+        if (otpOptional.isEmpty()) {
+            throw new ValidationException("Invalid OTP code");
+        }
+
+        OTP otpRecord = otpOptional.get();
+
+        // Check if OTP is expired
+        if (otpRecord.isExpired()) {
+            throw new ValidationException("OTP has expired. Please request a new OTP");
+        }
+
+        // Check if OTP is already verified
+        if (otpRecord.getIsVerified()) {
+            throw new ConflictException("OTP has already been verified");
+        }
+
+        // Mark OTP as verified
+        otpRecord.setIsVerified(true);
+        otpDAO.saveOTP(otpRecord);
+
+        // Update user's password
+        Users user = userOptional.get();
+        user.setPasswordHash(new BCryptPasswordEncoder().encode(newPassword));
+        usersDAO.saveUser(user);
+
+        logger.info("Password reset successfully with OTP for user: {}", email);
     }
 }
 

@@ -5,6 +5,7 @@ import com.tech.dto.AuthResponse;
 import com.tech.dto.OTPResendRequest;
 import com.tech.dto.OTPVerificationRequest;
 import com.tech.dto.TokenRequest;
+import com.tech.dto.ResetPasswordWithOTPRequest;
 import com.tech.auth.util.JwtUtil;
 import com.tech.commons.constants.Constants;
 import com.tech.commons.exception.UnauthorizedException;
@@ -137,6 +138,25 @@ public class AuthController {
         userService.updateRefreshToken(username, null);
         logger.info("User logged out successfully: {}", username);
         return ResponseEntity.ok("User logged out successfully");
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody OTPResendRequest request) {
+        logger.info("Forgot password request for email: {}", request.getEmail());
+        authService.forgotPassword(request.getEmail());
+        logger.info("Password reset OTP sent to email: {}", request.getEmail());
+        return ResponseEntity.ok(Map.of(
+                "message", "OTP has been sent to your email. Please check your inbox.",
+                "email", request.getEmail()
+        ));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordWithOTPRequest request) {
+        logger.info("Resetting password with OTP for email: {}", request.getEmail());
+        authService.resetPasswordWithOTP(request.getEmail(), request.getOtp(), request.getNewPassword(), request.getConfirmPassword());
+        logger.info("Password reset successfully for email: {}", request.getEmail());
+        return ResponseEntity.ok("Password reset successfully. You can now login with your new password.");
     }
 }
 
