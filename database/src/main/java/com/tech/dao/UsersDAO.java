@@ -43,4 +43,8 @@ public class UsersDAO {
     public Optional<Users> findByUserName(String username) {
         return usersRepository.findByName(username);
     }
+
+    public Optional<Users> findByUserEmail(String email) {
+        return usersRepository.findByEmail(email);
+    }
 }

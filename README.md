@@ -222,15 +222,23 @@ Exposes all REST endpoints for client interaction.
 - ✅ Role-based access control (USER, ADMIN, TRAINER)
 - ✅ Logout endpoint
 - ✅ CORS configuration for cross-origin requests
+- ✅ OTP Generation on signup
+- ✅ Email verification via OTP
+- ✅ OTP validation with 10-minute expiration
+- ✅ OTP resend functionality
+- ✅ Email verification required before login
 
 **How It Works:**
-1. User provides username and password in login request
-2. `AuthController` authenticates using Spring's `AuthenticationManager`
-3. `JwtUtil.generateToken()` creates access and refresh tokens
-4. Tokens contain username and are signed with a secret key
-5. Client includes access token in `Authorization: Bearer <token>` header for subsequent requests
-6. `JwtAuthenticationFilter` validates token on each request
-7. User can refresh expired access token using refresh token
+1. User provides username, password, and email in signup request
+2. `AuthService.signup()` validates input and creates user with `emailVerified = false`
+3. `OTPGenerator.generateOTP()` creates a 6-digit random code
+4. OTP is saved to database with 10-minute expiration timestamp
+5. `EmailService.sendOTPEmail()` sends OTP to user's email via SMTP
+6. User receives email and provides OTP in verification request
+7. `AuthService.verifyOTP()` validates OTP code and marks user as verified
+8. `AuthController.login()` now checks `user.emailVerified` before issuing tokens
+9. Only verified users can log in and receive JWT tokens
+10. User can call `/auth/resend-otp` if they need a new OTP
 
 ### 2. Input Validation & Error Handling ✅
 **Components:** `GlobalExceptionHandler`, Validators, Custom Exceptions
@@ -471,8 +479,10 @@ Users (1) ──────→ (M) HallOfFame
 
 ### Authentication Endpoints
 ```
-POST   /auth/login              → User login with credentials
-POST   /auth/signup             → User registration
+POST   /auth/login              → User login with credentials (requires email verification)
+POST   /auth/signup             → User registration with OTP generation
+POST   /auth/verify-otp         → Verify email via OTP code
+POST   /auth/resend-otp         → Resend OTP to email
 POST   /auth/refresh            → Refresh access token
 POST   /auth/logout             → User logout
 ```
@@ -623,26 +633,19 @@ docker run -p 8080:8080 sportsfolio:latest
 ## Pending Features
 
 ### High Priority 🔴
-1. **OTP Generation & Email Verification**
-   - Generate random OTP on signup
-   - Send OTP to user's email via SMTP
-   - Verify OTP to activate account
-   - OTP expiration after 10 minutes
-   - Resend OTP functionality
-
-2. **Password Reset Flow**
+1. **Password Reset Flow**
    - Forgot password endpoint
    - Send reset link via email
    - Validate reset token
    - Update password securely
 
-3. **API Documentation**
+2. **API Documentation**
    - Swagger/OpenAPI integration
    - Endpoint documentation
    - Request/response schemas
    - Authentication documentation
 
-4. **Comprehensive Testing**
+3. **Comprehensive Testing**
    - Unit tests for services
    - Integration tests for controllers
    - Database tests with TestContainers
@@ -771,9 +774,9 @@ For questions or support, please open an issue on GitHub or contact the developm
 - ✅ Tournament management
 - ✅ Trainer profiles
 - ✅ Endorsement system
+- ✅ OTP-based email verification
 
 ### v0.2.0 (Q2 2025)
-- 🔄 OTP-based email verification
 - 🔄 Password reset flow
 - 🔄 API documentation with Swagger
 - 🔄 Comprehensive testing

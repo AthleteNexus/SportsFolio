@@ -30,10 +30,9 @@ public class SecurityConfig {
         http.cors(Customizer.withDefaults())
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth.requestMatchers("/auth/login").permitAll()
-                .requestMatchers("/auth/signup").permitAll()
-                .requestMatchers("/auth/refresh").permitAll()
+                .requestMatchers("/auth/**").permitAll()
                 .requestMatchers("/api/public/**").permitAll() // Public API endpoints
-                .requestMatchers("api/admin/**").hasRole(UserRole.ADMIN.toString()) // Admin endpoints
+                .requestMatchers("/api/admin/**").hasRole(UserRole.ADMIN.toString()) // Admin endpoints
                 .anyRequest().authenticated()
             );
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);

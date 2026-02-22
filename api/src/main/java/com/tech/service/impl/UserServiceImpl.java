@@ -152,4 +152,9 @@ public class UserServiceImpl implements UserService {
     public Optional<Users> findByUsername(String username) {
         return usersDAO.findByUserName(username);
     }
+
+    @Override
+    public Optional<Users> findByEmailId(String emailId) {
+        return usersDAO.findByUserEmail(emailId);
+    }
 }

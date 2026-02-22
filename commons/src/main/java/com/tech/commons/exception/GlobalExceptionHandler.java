@@ -38,11 +38,20 @@ public class GlobalExceptionHandler {
 
     // handle bad request exceptions
     @ExceptionHandler({
-            InvalidUsernameException.class,InvalidPasswordException.class
+            InvalidUsernameException.class,
+            InvalidPasswordException.class
     })
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ResponseEntity<Object> handleBadRequest(InvalidUsernameException ex) {
+    public ResponseEntity<Object> handleValidationExceptions(ValidationException ex) {
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler({
+            ConflictException.class
+    })
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ResponseEntity<Object> handleConflictExceptions(ConflictException ex) {
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
     }
 
     // handle resource not found exceptions
@@ -53,4 +62,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Object> handleResourceNotFoundException(ResourceNotFoundException ex) {
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
+
+
 }

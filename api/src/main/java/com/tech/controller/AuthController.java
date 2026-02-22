@@ -2,6 +2,8 @@ package com.tech.controller;
 
 import com.tech.dto.AuthRequest;
 import com.tech.dto.AuthResponse;
+import com.tech.dto.OTPResendRequest;
+import com.tech.dto.OTPVerificationRequest;
 import com.tech.dto.TokenRequest;
 import com.tech.auth.util.JwtUtil;
 import com.tech.commons.constants.Constants;
@@ -18,6 +20,9 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/auth")
@@ -48,21 +53,60 @@ public class AuthController {
             logger.info("Authentication failed for user: {}", request.getUsername() + " - " + e.getMessage());
             throw new UnauthorizedException("Invalid username or password");
         }
+
+        // Check if user's email is verified
+        Users user = userService.findByUsername(request.getUsername()).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        if (!user.getEmailVerified()) {
+            logger.info("Login attempted with unverified email: {}", request.getUsername());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of(
+                            "message", "Email not verified",
+                            "code", "EMAIL_NOT_VERIFIED",
+                            "email", user.getEmail()
+                    ));
+        }
+
         String accessToken = jwtUtil.generateToken(request.getUsername(), Constants.ACCESS_TOKEN_VALIDITY_SECONDS);
         String refreshToken = jwtUtil.generateToken(request.getUsername(), Constants.REFRESH_TOKEN_VALIDITY_SECONDS);
         logger.info("Generated access token and refresh token for user: {}", request.getUsername());
         // Optionally, you can save the tokens in the database or cache for further use
         userService.updateRefreshToken(request.getUsername(), refreshToken);
-        UserDTO user = userService.getCurrentUser(request.getUsername());
-        return ResponseEntity.ok(new AuthResponse(accessToken, refreshToken, user));
+        UserDTO userDto = userService.getCurrentUser(request.getUsername());
+        return ResponseEntity.ok(new AuthResponse(accessToken, refreshToken, userDto));
     }
 
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody AuthRequest request) {
         logger.info("Signing up user: {}", request.getUsername());
+        Optional<Users> existingUser = userService.findByEmailId(request.getEmailId());
+        if (existingUser.isPresent() && !existingUser.get().getEmailVerified()) {
+            logger.info("User exists but email not verified: {}", request.getUsername());
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of(
+                            "message", "Email not verified",
+                            "code", "EMAIL_NOT_VERIFIED",
+                            "email", request.getEmailId()
+                    ));
+        }
         authService.signup(request);
-        logger.info("User signed up successfully: {}", request.getUsername());
-        return ResponseEntity.ok("User signed up successfully");
+        logger.info("User signed up successfully: {} - OTP sent to email", request.getEmailId());
+        return ResponseEntity.status(HttpStatus.CREATED).body("User signed up successfully. OTP sent to your email. Please verify your email to login.");
+    }
+
+    @PostMapping("/verify-otp")
+    public ResponseEntity<?> verifyOTP(@RequestBody OTPVerificationRequest request) {
+        logger.info("Verifying OTP for email: {}", request.getEmail());
+        authService.verifyOTP(request.getEmail(), request.getOtp());
+        logger.info("OTP verified successfully for email: {}", request.getEmail());
+        return ResponseEntity.ok("Email verified successfully. You can now login.");
+    }
+
+    @PostMapping("/resend-otp")
+    public ResponseEntity<?> resendOTP(@RequestBody OTPResendRequest request) {
+        logger.info("Resending OTP to email: {}", request.getEmail());
+        authService.resendOTP(request.getEmail());
+        logger.info("OTP resent successfully to email: {}", request.getEmail());
+        return ResponseEntity.ok("OTP resent to your email. Please verify within 10 minutes.");
     }
 
     @PostMapping("/refresh")

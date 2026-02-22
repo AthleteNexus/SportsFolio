@@ -75,6 +75,9 @@ public class Users {
     @Column(name = "refresh_token")
     private String refreshToken;
 
+    @Column(name = "email_verified")
+    private Boolean emailVerified = false;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

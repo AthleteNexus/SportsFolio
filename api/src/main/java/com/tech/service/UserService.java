@@ -21,4 +21,6 @@ public interface UserService {
     void updateRefreshToken(String username, String refreshToken);
 
     Optional<Users> findByUsername(String username);
+
+    Optional<Users> findByEmailId(String emailId);
 }
